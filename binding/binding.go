@@ -58,6 +58,7 @@ func (sb *ServiceBinding) AllBindings() ([]map[string]string, error) {
 			}
 			m[f.Name()] = string(fc)
 		}
+		result = append(result, m)
 	}
 	return result, nil
 }
@@ -67,6 +68,44 @@ func (sb *ServiceBinding) AllBindings() ([]map[string]string, error) {
 // Return empty slice if no bindings found
 func (sb *ServiceBinding) Bindings(_type string) ([]map[string]string, error) {
 	result := []map[string]string{}
+	dirs, err := os.ReadDir(sb.root)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range dirs {
+		if !d.IsDir() {
+			continue
+		}
+
+		if _, err := os.Stat(filepath.Join(sb.root, d.Name(), "type")); err == nil {
+
+			tp, err := os.ReadFile(filepath.Join(sb.root, d.Name(), "type"))
+			if err != nil {
+				continue
+			}
+			if string(tp) != _type {
+				continue
+			}
+
+			m := map[string]string{}
+			files, err := os.ReadDir(filepath.Join(sb.root, d.Name()))
+			if err != nil {
+				return nil, err
+			}
+			for _, f := range files {
+				if f.IsDir() {
+					continue
+				}
+				fc, err := os.ReadFile(filepath.Join(sb.root, d.Name(), f.Name()))
+				if err != nil {
+					return nil, err
+				}
+				m[f.Name()] = string(fc)
+			}
+			result = append(result, m)
+		}
+	}
 	return result, nil
 }
 
@@ -75,5 +114,54 @@ func (sb *ServiceBinding) Bindings(_type string) ([]map[string]string, error) {
 // Return empty slice if no bindings found.
 func (sb *ServiceBinding) BindingsWithProvider(_type, provider string) ([]map[string]string, error) {
 	result := []map[string]string{}
+	dirs, err := os.ReadDir(sb.root)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range dirs {
+		if !d.IsDir() {
+			continue
+		}
+
+		if _, err := os.Stat(filepath.Join(sb.root, d.Name(), "type")); err == nil {
+
+			tp, err := os.ReadFile(filepath.Join(sb.root, d.Name(), "type"))
+			if err != nil {
+				continue
+			}
+			if string(tp) != _type {
+				continue
+			}
+
+			if _, err := os.Stat(filepath.Join(sb.root, d.Name(), "provider")); err == nil {
+
+				pp, err := os.ReadFile(filepath.Join(sb.root, d.Name(), "provider"))
+				if err != nil {
+					continue
+				}
+				if string(pp) != provider {
+					continue
+				}
+
+				m := map[string]string{}
+				files, err := os.ReadDir(filepath.Join(sb.root, d.Name()))
+				if err != nil {
+					return nil, err
+				}
+				for _, f := range files {
+					if f.IsDir() {
+						continue
+					}
+					fc, err := os.ReadFile(filepath.Join(sb.root, d.Name(), f.Name()))
+					if err != nil {
+						return nil, err
+					}
+					m[f.Name()] = string(fc)
+				}
+				result = append(result, m)
+			}
+		}
+	}
 	return result, nil
 }
